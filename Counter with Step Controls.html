@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Counter with Step Controls</title>
+
+    <style>
+      /* ---------- Page basics ---------- */
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 40px 20px;
+        background: #0a0d12;
+        color: #e8eef6;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+      }
+
+      h1 {
+        font-size: 24px;
+        text-align: center;
+        margin: 0 0 30px;
+      }
+
+      /* ---------- Card layout ---------- */
+      .grid {
+        display: grid;
+        gap: 20px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        width: min(1000px, 100%);
+      }
+
+      .card {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 22px;
+        border: 1px solid #26303d;
+        border-radius: 18px;
+        background: #141a23;
+      }
+
+      .card h2 {
+        margin: 0;
+        font-size: 15px;
+        text-align: center;
+      }
+
+      .hint {
+        margin: 0;
+        font-size: 12.5px;
+        color: #93a1b3;
+        text-align: center;
+      }
+
+      /* ---------- The counter itself ---------- */
+      .counter {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px;
+        border: 1px solid #26303d;
+        border-radius: 14px;
+      }
+
+      .btn {
+        width: 46px;
+        height: 46px;
+        border: 0;
+        border-radius: 10px;
+        background: #1d2531;
+        color: #e8eef6;
+        font-size: 20px;
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      .btn:hover:not(:disabled) {
+        background: #27313f;
+      }
+      .btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      .value {
+        flex: 1;
+        min-width: 0;
+        height: 46px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: #e8eef6;
+        font-family: ui-monospace, Menlo, Consolas, monospace;
+        font-size: 22px;
+        font-weight: 600;
+        text-align: center;
+        outline: none;
+      }
+
+      .value:focus {
+        background: rgba(110, 168, 254, 0.12);
+      }
+
+      /* ---------- Step chips ---------- */
+      .steps {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .step {
+        padding: 8px 16px;
+        border: 1px solid #26303d;
+        border-radius: 999px;
+        background: transparent;
+        color: #93a1b3;
+        font: 600 13px/1 inherit;
+        cursor: pointer;
+      }
+
+      .step:hover {
+        color: #e8eef6;
+      }
+
+      /* The currently selected step */
+      .step.is-on {
+        background: rgba(110, 168, 254, 0.16);
+        border-color: rgba(110, 168, 254, 0.55);
+        color: #cfe2ff;
+      }
+    </style>
+  </head>
+
+  <body>
+    <main>
+      <h1>Counter with Step Controls</h1>
+
+      <div class="grid">
+        <!-- ===== Quantity ===== -->
+        <section class="card">
+          <h2>Quantity</h2>
+          <p class="hint">min 0 · max 99 · whole numbers</p>
+
+          <div
+            class="counter"
+            data-min="0"
+            data-max="99"
+            data-step="1"
+            data-decimals="0"
+            data-value="1"
+          >
+            <button class="btn minus" type="button" aria-label="Decrease">
+              −
+            </button>
+            <input
+              class="value"
+              type="text"
+              inputmode="numeric"
+              aria-label="Quantity"
+            />
+            <button class="btn plus" type="button" aria-label="Increase">
+              +
+            </button>
+          </div>
+
+          <div class="steps">
+            <button class="step" type="button" data-step="1">1</button>
+            <button class="step" type="button" data-step="5">5</button>
+            <button class="step" type="button" data-step="10">10</button>
+          </div>
+        </section>
+
+        <!-- ===== Score ===== -->
+        <section class="card">
+          <h2>Score</h2>
+          <p class="hint">min 0 · max 100 · whole numbers</p>
+
+          <div
+            class="counter"
+            data-min="0"
+            data-max="100"
+            data-step="5"
+            data-decimals="0"
+            data-value="75"
+          >
+            <button class="btn minus" type="button" aria-label="Decrease">
+              −
+            </button>
+            <input
+              class="value"
+              type="text"
+              inputmode="numeric"
+              aria-label="Score"
+            />
+            <button class="btn plus" type="button" aria-label="Increase">
+              +
+            </button>
+          </div>
+
+          <div class="steps">
+            <button class="step" type="button" data-step="1">1</button>
+            <button class="step" type="button" data-step="5">5</button>
+            <button class="step" type="button" data-step="10">10</button>
+          </div>
+        </section>
+
+        <!-- ===== Weight (with decimals) ===== -->
+        <section class="card">
+          <h2>Weight</h2>
+          <p class="hint">min 0 · max 150 · one decimal</p>
+
+          <div
+            class="counter"
+            data-min="0"
+            data-max="150"
+            data-step="0.5"
+            data-decimals="1"
+            data-value="70"
+          >
+            <button class="btn minus" type="button" aria-label="Decrease">
+              −
+            </button>
+            <input
+              class="value"
+              type="text"
+              inputmode="decimal"
+              aria-label="Weight"
+            />
+            <button class="btn plus" type="button" aria-label="Increase">
+              +
+            </button>
+          </div>
+
+          <div class="steps">
+            <button class="step" type="button" data-step="0.1">0.1</button>
+            <button class="step" type="button" data-step="0.5">0.5</button>
+            <button class="step" type="button" data-step="1">1</button>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      /* ============================================================
+     One function does the work. We call it once per counter.
+     ============================================================ */
+
+      document.querySelectorAll(".counter").forEach(setupCounter);
+
+      function setupCounter(counter) {
+        // --- 1. Grab the pieces we need ---
+        const minusButton = counter.querySelector(".minus");
+        const plusButton = counter.querySelector(".plus");
+        const input = counter.querySelector(".value");
+
+        // The step buttons live in the same card as the counter.
+        const stepButtons = counter.closest(".card").querySelectorAll(".step");
+
+        // --- 2. Read the settings from data attributes ---
+        const min = Number(counter.dataset.min);
+        const max = Number(counter.dataset.max);
+        const decimals = Number(counter.dataset.decimals || 0);
+
+        let step = Number(counter.dataset.step);
+        let value = Number(counter.dataset.value);
+
+        // --- 3. Draw the current state on screen ---
+        function show() {
+          input.value = value.toFixed(decimals);
+
+          // Disable a button when we can't go any further.
+          minusButton.disabled = value <= min;
+          plusButton.disabled = value >= max;
+
+          // Highlight the selected step chip.
+          stepButtons.forEach(function (button) {
+            button.classList.toggle(
+              "is-on",
+              Number(button.dataset.step) === step,
+            );
+          });
+        }
+
+        // --- 4. Hook up the buttons ---
+
+        //   Add or subtract one step. direction is 1 or -1.
+
+        function change(direction) {
+          setValue(value + step * direction);
+        }
+
+        plusButton.addEventListener("click", function () {
+          change(1);
+        });
+        minusButton.addEventListener("click", function () {
+          change(-1);
+        });
+
+        // --- 5. Change the value (always inside min / max) ---
+        function setValue(newValue) {
+          value = Math.min(max, Math.max(min, newValue)); // keep in range
+          value = Number(value.toFixed(decimals)); // avoid 0.30000000004
+          show();
+        }
+
+        // --- 6. Hook up the step chips ---
+        stepButtons.forEach(function (button) {
+          button.addEventListener("click", function () {
+            step = Number(button.dataset.step);
+            show();
+          });
+        });
+
+        // --- 7. Typing a number by hand ---
+        // "change" fires when the user leaves the field or presses Enter.
+        input.addEventListener("change", function () {
+          const typed = parseFloat(input.value);
+
+          if (isNaN(typed)) {
+            show(); // not a number → put the old value back
+          } else {
+            setValue(typed); // ok → clamp it and redraw
+          }
+        });
+
+        // Select the text when the field is clicked, so typing replaces it.
+        input.addEventListener("focus", function () {
+          input.select();
+        });
+
+        // --- 8. First draw ---
+        show();
+      }
+    </script>
+  </body>
+</html>
