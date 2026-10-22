@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interactive Rating Component</title>
+
+    <style>
+      /* ---------- Base ---------- */
+      * {
+        box-sizing: border-box;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        color: #1f2937;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+
+      /* ---------- Card ---------- */
+      .card {
+        width: 100%;
+        max-width: 400px;
+        padding: 26px;
+        text-align: center;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.4rem;
+      }
+
+      .subtitle {
+        margin: 6px 0 22px;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        color: #6b7280;
+      }
+
+      /* ---------- Stars (shared by both views) ---------- */
+      .stars {
+        display: flex;
+        justify-content: center;
+        gap: 2px;
+        margin-bottom: 14px;
+      }
+
+      .star {
+        padding: 4px;
+        font-size: clamp(2rem, 8vw, 2.6rem);
+        line-height: 1;
+        color: #d1d5db; /* empty star */
+        background: none;
+        border: 0;
+        border-radius: 10px;
+        transition:
+          color 0.15s,
+          transform 0.15s;
+      }
+
+      .star.on {
+        color: #fbbf24; /* filled star */
+      }
+
+      /* Only the clickable stars get hover + cursor effects */
+      button.star {
+        cursor: pointer;
+      }
+
+      button.star:hover {
+        transform: scale(1.12);
+      }
+
+      button.star:focus-visible {
+        outline: 2px solid #10b981;
+        outline-offset: 0;
+      }
+
+      .stars.is-static .star {
+        cursor: default;
+        font-size: clamp(1.7rem, 7vw, 2.2rem);
+      }
+
+      /* ---------- Rating label ---------- */
+      .rating-label {
+        min-height: 22px; /* stops layout jump when text changes */
+        margin: 0 0 22px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #9ca3af;
+      }
+
+      .rating-label.active {
+        color: #b45309;
+      }
+
+      /* ---------- Buttons (one shared base class) ---------- */
+      .btn {
+        width: 100%;
+        padding: 13px;
+        font: inherit;
+        font-weight: 600;
+        border: 1.5px solid transparent;
+        border-radius: 10px;
+        cursor: pointer;
+        transition:
+          background 0.15s,
+          color 0.15s,
+          border-color 0.15s,
+          opacity 0.15s;
+      }
+
+      .btn-primary {
+        color: #ffffff;
+        background: #10b981;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        background: #059669;
+      }
+
+      .btn-primary:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      .btn-ghost {
+        margin-top: 4px;
+        color: #6b7280;
+        background: transparent;
+        border-color: #e5e7eb;
+      }
+
+      .btn-ghost:hover {
+        color: #1f2937;
+        background: #f9fafb;
+      }
+
+      /* ---------- Thank-you view ---------- */
+      .thanks-icon {
+        width: 58px;
+        height: 58px;
+        margin: 0 auto 16px;
+        display: grid;
+        place-items: center;
+        font-size: 1.6rem;
+        color: #b45309;
+        background: #fef3c7;
+        border-radius: 50%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <main class="card">
+      <!-- ===== Rating view ===== -->
+      <section id="ratingView">
+        <h1>How was your experience?</h1>
+        <p class="subtitle">
+          Tap a star to rate. Your feedback helps us improve.
+        </p>
+
+        <div
+          class="stars"
+          id="stars"
+          role="radiogroup"
+          aria-label="Rate your experience from 1 to 5 stars"
+        ></div>
+
+        <p class="rating-label" id="ratingLabel">Select a rating</p>
+
+        <button type="button" class="btn btn-primary" id="submitBtn" disabled>
+          Submit rating
+        </button>
+      </section>
+
+      <!-- ===== Thank-you view ===== -->
+      <section id="thanksView" hidden>
+        <div class="thanks-icon" aria-hidden="true">★</div>
+        <h1>Thanks for your feedback!</h1>
+        <div class="stars is-static" id="thanksStars" aria-hidden="true"></div>
+        <p class="subtitle" id="thanksText"></p>
+        <button type="button" class="btn btn-ghost" id="againBtn">
+          Rate again
+        </button>
+      </section>
+    </main>
+
+    <script>
+      /* -------------------------------------------------
+       1. Settings + elements (grabbed once)
+    ------------------------------------------------- */
+      const STAR_COUNT = 5;
+      const LABELS = ["Poor", "Fair", "Good", "Very good", "Excellent"];
+
+      const starsWrap = document.getElementById("stars");
+      const ratingLabel = document.getElementById("ratingLabel");
+      const submitBtn = document.getElementById("submitBtn");
+      const ratingView = document.getElementById("ratingView");
+      const thanksView = document.getElementById("thanksView");
+      const thanksStars = document.getElementById("thanksStars");
+      const thanksText = document.getElementById("thanksText");
+      const againBtn = document.getElementById("againBtn");
+
+      let rating = 0; // the star the user actually picked
+
+      /* -------------------------------------------------
+       2. Build one star (used by BOTH views — no repeats)
+    ------------------------------------------------- */
+      function createStar(value, interactive) {
+        const star = document.createElement(interactive ? "button" : "span");
+        star.className = "star";
+        star.textContent = "★";
+        star.dataset.value = value;
+
+        if (interactive) {
+          star.type = "button";
+          star.setAttribute("role", "radio");
+          star.setAttribute(
+            "aria-label",
+            value +
+              " star" +
+              (value > 1 ? "s" : "") +
+              " — " +
+              LABELS[value - 1],
+          );
+
+          star.addEventListener("mouseenter", () => showPreview(value));
+          star.addEventListener("focus", () => showPreview(value));
+          star.addEventListener("click", () => setRating(value));
+        } else {
+          star.setAttribute("aria-hidden", "true");
+        }
+
+        return star;
+      }
+
+      /* Create the 5 clickable stars with one loop */
+      for (let i = 1; i <= STAR_COUNT; i++) {
+        starsWrap.appendChild(createStar(i, true));
+      }
+
+      const starEls = starsWrap.querySelectorAll(".star");
+
+      /* -------------------------------------------------
+       3. Painting + label helpers
+    ------------------------------------------------- */
+      function fillStars(container, upTo) {
+        container.querySelectorAll(".star").forEach(function (star, index) {
+          star.classList.toggle("on", index < upTo);
+        });
+      }
+
+      function paint(upTo) {
+        fillStars(starsWrap, upTo);
+        // Tell screen readers which star is chosen
+        starEls.forEach(function (star, index) {
+          star.setAttribute("aria-checked", String(index === rating - 1));
+        });
+      }
+
+      function showLabel(value) {
+        ratingLabel.textContent = value ? LABELS[value - 1] : "Select a rating";
+        ratingLabel.classList.toggle("active", value > 0);
+      }
+
+      /* -------------------------------------------------
+       4. Interactions
+    ------------------------------------------------- */
+      function showPreview(value) {
+        paint(value); // light up stars up to the hovered one
+        showLabel(value);
+      }
+
+      function setRating(value) {
+        rating = value;
+        paint(value);
+        showLabel(value);
+        submitBtn.disabled = false;
+      }
+
+      /* Leaving the star row restores the saved rating */
+      starsWrap.addEventListener("mouseleave", function () {
+        paint(rating);
+        showLabel(rating);
+      });
+
+      /* Keyboard users tabbing away also restore the saved rating */
+      starsWrap.addEventListener("focusout", function () {
+        paint(rating);
+        showLabel(rating);
+      });
+
+      /* -------------------------------------------------
+       5. Submit → thank-you view
+    ------------------------------------------------- */
+      submitBtn.addEventListener("click", function () {
+        thanksText.textContent =
+          "You rated us " +
+          rating +
+          " out of " +
+          STAR_COUNT +
+          " — " +
+          LABELS[rating - 1] +
+          ".";
+
+        // Build the static stars once per submit (same createStar helper)
+        thanksStars.innerHTML = "";
+        for (let i = 1; i <= STAR_COUNT; i++) {
+          thanksStars.appendChild(createStar(i, false));
+        }
+        fillStars(thanksStars, rating);
+
+        ratingView.hidden = true;
+        thanksView.hidden = false;
+        againBtn.focus();
+      });
+
+      /* -------------------------------------------------
+       6. Rate again → reset everything
+    ------------------------------------------------- */
+      againBtn.addEventListener("click", function () {
+        rating = 0;
+        paint(0);
+        showLabel(0);
+        submitBtn.disabled = true;
+
+        thanksView.hidden = true;
+        ratingView.hidden = false;
+      });
+
+      /* -------------------------------------------------
+       7. Start up
+    ------------------------------------------------- */
+      paint(0);
+      showLabel(0);
+    </script>
+  </body>
+</html>
